@@ -6,7 +6,7 @@ tools {
 }
 
  environment {
-    SCANNER_HOME = tool 'sonar-scanner'
+    SCANNER_HOME = tool 'sonar-server'
 }
 
  stages {
@@ -38,7 +38,7 @@ tools {
     stage('Code Quality Gate') {
         steps {
             script {
-                waitForQualityGate abortPipeline: false, credentialsId: 'sonarqube-token'
+                waitForQualityGate abortPipeline: false, credentialsId: 'sonar-token'
             }
         }
     }
@@ -46,19 +46,6 @@ tools {
     stage('Install NPM Dependencies') {
         steps {
             sh 'npm install'
-        }
-    }
-
-    stage('OWASP FS SCAN') {
-        steps {
-            dependencyCheck(
-                additionalArguments: '--scan ./ --disableYarnAudit --disableNodeAudit',
-                odcInstallation: 'DP-Check'
-            )
-
-            dependencyCheckPublisher(
-                pattern: '**/dependency-check-report.xml'
-            )
         }
     }
 
@@ -80,18 +67,6 @@ tools {
                 withDockerRegistry(credentialsId: 'docker') {
                     sh 'docker tag zomato lohitpunit/zomato:latest'
                     sh 'docker push lohitpunit/zomato:latest'
-                }
-            }
-        }
-    }
-
-    stage('Docker Scout Image') {
-        steps {
-            script {
-                withDockerRegistry(credentialsId: 'docker') {
-                    sh 'docker scout quickview lohitpunit/zomato:latest || true'
-                    sh 'docker scout cves lohitpunit/zomato:latest || true'
-                    sh 'docker scout recommendations lohitpunit/zomato:latest || true'
                 }
             }
         }
